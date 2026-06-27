@@ -1,6 +1,5 @@
 import os.path
 from dotenv import load_dotenv
-from secret_load import getEnvSecret
 import config
 
 from google.auth.transport.requests import Request
@@ -16,7 +15,6 @@ PATHS = config.PATHS
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 # The ID and range of a sample spreadsheet.
 SAMPLE_SPREADSHEET_ID = os.getenv("SPREADSHEET_ID")
-# SAMPLE_SPREADSHEET_ID = getEnvSecret("Env", "SPREADSHEET_ID")
 SAMPLE_RANGE_NAME = "Sheet1!A1"
 
 

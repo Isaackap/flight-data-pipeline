@@ -1,5 +1,4 @@
 import os
-from secret_load import getEnvSecret
 from dotenv import load_dotenv
 
 load_dotenv()
@@ -14,17 +13,16 @@ PATHS = {
     "search_flights_response": os.path.join(RUNTIME_DIR, "search_flights_response.json")
 }
 
+DB_PASSWORD = os.getenv("DB_PASSWORD")
+
 
 # ------------------------------------------------------------- Email Configurations Below ------------------------------------------------------------
 
 # Parameters for sending the email/alert of flight offers.
 # The Sender and Receiver email info will be imported from the local .env file as well as the Sender email password (Use app password if 2FA is enabled)
 FROM_EMAIL = os.getenv("SENDER_EMAIL")
-# FROM_EMAIL = getEnvSecret("Env", "SENDER_EMAIL")
 TO_EMAIL = os.getenv("RECEIVER_EMAIL")
-# TO_EMAIL = getEnvSecret("Env", "RECEIVER_EMAIL")
 EMAIL_PASSWORD = os.getenv("PASSWORD")
-# EMAIL_PASSWORD = getEnvSecret("Env", "PASSWORD")
 # Parameters for the email server, only variable that needs changing is the 'SMTP_SERVER', adjust it to your sender email
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
@@ -35,7 +33,6 @@ EMAIL_SUBJECT = "FlightScript Price Alert"
 # ------------------------------------------------------------- API Configurations below --------------------------------------------------------------
 
 SERPAPI_KEY = os.getenv("SERPAPI_KEY")
-# SERPAPI_KEY = getEnvSecret("Env", "SERPAPI_KEY")  # Change this to os.getenv() if using that option
 
 # This query takes 11 total parameters, some are optional
 # Replace the following variables with the data you desire for your flight search, following the correct format
