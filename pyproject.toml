@@ -1,0 +1,18 @@
+[project]
+name = "flightscript"
+version = "0.1.0"
+description = "Add your description here"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "airportsdata>=20260315",
+    "boto3>=1.39.11",
+    "google-api-python-client>=2.176.0",
+    "google-auth-httplib2>=0.2.0",
+    "google-auth-oauthlib>=1.2.2",
+    "pytest>=9.1.1",
+    "pytest-mock>=3.15.1",
+    "python-dotenv>=1.1.1",
+    "requests>=2.32.4",
+    "serpapi>=1.0.2",
+]

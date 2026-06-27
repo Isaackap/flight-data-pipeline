@@ -1,0 +1,11 @@
+.env
+search_flights_response.json
+merged_flight_data.json
+__pycache__
+*.txt
+credentials.json
+.venv/
+token.json
+runtime-outputs/
+runtime/
+.pytest_cache/
