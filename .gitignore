@@ -9,3 +9,6 @@ token.json
 runtime-outputs/
 runtime/
 .pytest_cache/
+.vscode/
+data/
+*.sql

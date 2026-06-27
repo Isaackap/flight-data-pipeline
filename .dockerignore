@@ -41,3 +41,6 @@ credentials.json
 runtime/
 runtime-outputs/
 .pytest_cache/
+.vscode/
+data/
+*.sql
