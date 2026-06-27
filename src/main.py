@@ -6,7 +6,7 @@ import gsheets
 import serpapi
 import airportsdata
 from email_alert import sendEmail
-from secret_load import getCredentials, updateTokenSecret
+from db_transactions import insert_new_flight_observation
 
 AIRPORTS = airportsdata.load("IATA") 
 
@@ -40,20 +40,6 @@ QUERYSTRING = {
     "show_hidden":config.SHOW_HIDDEN,
     "sort_by":config.SORT_BY,
 }
-
-
-# Mock data used to test features before implementing actual API calls with a key
-# Response is the JSON given as example response on rapidapi
-def mockAPI():
-    with open("search_flights_response.json", "r") as f:
-        data = json.load(f)
-
-    best_flights = data["best_flights"]
-    other_flights = data["other_flights"]
-
-    results = best_flights + other_flights
-    
-    return data["search_metadata"]["status"], results
 
 
 # Actual API call, uses google flights form serpAPI
@@ -205,30 +191,14 @@ def searchFlightOffers(data):
 
 
 if __name__ == "__main__":
-    # Comment out both lines if not using AWS Secrets Manager
-    # getCredentials("Token", "token.json")
-    # getCredentials("Credentials", "credentials.json")
-
+    ensure_runtime_files_exist()
     response, data = callAPI()
 
     if response == "Success":
         searchFlightOffers(data)
-        # Comment out if you don't want Email alerts
         sendEmail()
-        # Comment out if you don't want data exported to Google Sheets
         gsheets.main()
-        # Comment out if not using AWS Secrets Manager
-        # updateTokenSecret("Token", "token.json")
+        insert_new_flight_observation()
+
     else:
         print(f"SearchFlight response returned False with status: {response}")
-
-
-    # mock_response, mock_data = mockAPI()
-    # if mock_response == "Success":
-    #     print("Mock API call successful, proceeding to search flight offers...")
-    #     with open("merged_flight_data.json", "w+", encoding="utf-8") as f:
-    #         json.dump(mock_data, f, ensure_ascii=False, indent=4)
-    #     searchFlightOffers(mock_data)
-    #     gsheets.main()
-    # else:
-    #     print(f"Mock API call failed with status: {mock_response}")
