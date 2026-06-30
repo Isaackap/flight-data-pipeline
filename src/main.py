@@ -190,15 +190,37 @@ def searchFlightOffers(data):
                 flightAlert(alert_data)
 
 
-if __name__ == "__main__":
+def main():
     ensure_runtime_files_exist()
+
     response, data = callAPI()
 
-    if response == "Success":
-        searchFlightOffers(data)
-        sendEmail()
-        gsheets.main()
-        insert_new_flight_observation()
-
-    else:
+    if response != "Success":
         print(f"SearchFlight response returned False with status: {response}")
+        return
+
+    if not data:
+        print("SearchFlight response succeeded, but no flight data was returned.")
+        return
+
+    try:
+        searchFlightOffers(data)
+    except Exception as e:
+        print(f"Failed to process flight data. {e}")
+        return
+
+    feature_functions = [
+        sendEmail,
+        gsheets.main,
+        insert_new_flight_observation
+    ]
+
+    for func in feature_functions:
+        try:
+            func()
+        except Exception as e:
+            print(f"The function {func.__name__} failed to complete. {e}")
+
+
+if __name__ == "__main__":
+    main()
