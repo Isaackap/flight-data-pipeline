@@ -191,7 +191,11 @@ def searchFlightOffers(data):
 
 
 def main():
-    ensure_runtime_files_exist()
+    try:
+        ensure_runtime_files_exist()
+    except Exception as e:
+        print(f"Failed to create necessary runtime directory/files. {e}")
+        return
 
     response, data = callAPI()
 
