@@ -7,6 +7,7 @@ import serpapi
 import airportsdata
 from email_alert import sendEmail
 from db_transactions import insert_new_flight_observation
+from token_refresh import main as token_refresh_main
 
 AIRPORTS = airportsdata.load("IATA") 
 
@@ -215,8 +216,8 @@ def main():
 
     feature_functions = [
         sendEmail,
-        gsheets.main,
-        insert_new_flight_observation
+        insert_new_flight_observation,
+        gsheets.main
     ]
 
     for func in feature_functions:
@@ -224,6 +225,18 @@ def main():
             func()
         except Exception as e:
             print(f"The function {func.__name__} failed to complete. {e}")
+            if func is gsheets.main and isinstance(
+                e, gsheets.GoogleSheetsAuthenticationError
+            ):
+                print("Google authentication failed; requesting a new token.")
+                try:
+                    token_refresh_main()
+                except Exception as refresh_error:
+                    print(
+                        "Google Sheets authentication retry failed. "
+                        f"{type(refresh_error).__name__}: {refresh_error}"
+                    )
+
 
 
 if __name__ == "__main__":
