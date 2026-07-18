@@ -44,3 +44,4 @@ runtime-outputs/
 .vscode/
 data/
 *.sql
+EDA/

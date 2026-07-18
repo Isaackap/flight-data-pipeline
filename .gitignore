@@ -11,4 +11,4 @@ runtime/
 .pytest_cache/
 .vscode/
 data/
-*.sql
+flight-data.session.sql
