@@ -1,100 +1,92 @@
+import csv
 import os
 from pathlib import Path
 
 from dotenv import load_dotenv
 import config
 
-from google.auth.exceptions import RefreshError
-from google.auth.transport.requests import Request
-from google.oauth2.credentials import Credentials
-from google_auth_oauthlib.flow import InstalledAppFlow
+from google.oauth2 import service_account
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
 
 load_dotenv()
 
 PATHS = config.PATHS
-# If modifying these scopes, delete the file token.json.
 SCOPES = ["https://www.googleapis.com/auth/spreadsheets"]
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-TOKEN_PATH = PROJECT_ROOT / "token.json"
-CREDENTIALS_PATH = PROJECT_ROOT / "credentials.json"
-# The ID and range of a sample spreadsheet.
-SAMPLE_SPREADSHEET_ID = os.getenv("SPREADSHEET_ID")
-SAMPLE_RANGE_NAME = "Sheet1!A1"
+DEFAULT_SERVICE_ACCOUNT_PATH = PROJECT_ROOT / "flightdata-service-account.json"
+SPREADSHEET_ID = os.getenv("SPREADSHEET_ID")
+SHEET_RANGE = "Sheet1!A1"
 
 
-class GoogleSheetsAuthenticationError(RuntimeError):
-  """Raised when the saved Google credentials can no longer be used."""
+class GoogleSheetsConfigurationError(RuntimeError):
+  """Raised when Sheets or service-account configuration is incomplete."""
 
 
-def readText():
-  data = []
-  with open(PATHS["flight_data"], "r") as f:
-    lines = f.readlines()
-    for item in lines:
-      data.append(item.split(','))
-    f.close()
-    return data
+def read_flight_data():
+  with open(PATHS["flight_data"], "r", newline="", encoding="utf-8") as file:
+    return list(csv.reader(file))
 
 
 def get_credentials():
-  creds = None
+  configured_path = os.getenv("GOOGLE_APPLICATION_CREDENTIALS")
+  credentials_path = (
+      Path(configured_path).expanduser()
+      if configured_path
+      else DEFAULT_SERVICE_ACCOUNT_PATH
+  )
 
-  if TOKEN_PATH.exists():
-    try:
-      creds = Credentials.from_authorized_user_file(TOKEN_PATH, SCOPES)
-    except (KeyError, TypeError, ValueError) as err:
-      raise GoogleSheetsAuthenticationError(
-          f"Could not read the saved Google token at {TOKEN_PATH}."
-      ) from err
+  if not credentials_path.is_absolute():
+    credentials_path = PROJECT_ROOT / credentials_path
 
-  if creds and creds.valid:
-    return creds
-
-  if creds and creds.expired and creds.refresh_token:
-    try:
-      creds.refresh(Request())
-    except RefreshError as err:
-      raise GoogleSheetsAuthenticationError(
-          "Google rejected the saved refresh token."
-      ) from err
-  else:
-    flow = InstalledAppFlow.from_client_secrets_file(
-        CREDENTIALS_PATH, SCOPES
-    )
-    # This opens the user's browser and handles the OAuth callback locally.
-    creds = flow.run_local_server(
-        port=3000,
-        access_type="offline",
-        include_granted_scopes="true",
-        prompt="consent",
+  if not credentials_path.is_file():
+    raise GoogleSheetsConfigurationError(
+        "Service-account credentials were not found at "
+        f"{credentials_path}. Set GOOGLE_APPLICATION_CREDENTIALS to the "
+        "service-account JSON file."
     )
 
-  TOKEN_PATH.write_text(creds.to_json(), encoding="utf-8")
-  return creds
+  try:
+    return service_account.Credentials.from_service_account_file(
+        credentials_path,
+        scopes=SCOPES,
+    )
+  except (OSError, ValueError) as err:
+    raise GoogleSheetsConfigurationError(
+        f"Could not load service-account credentials from {credentials_path}."
+    ) from err
 
 
 def main():
-  """Shows basic usage of the Sheets API.
-  Prints values from a sample spreadsheet.
-  """
+  """Append the latest flight observations to the configured Google Sheet."""
+  if not SPREADSHEET_ID:
+    raise GoogleSheetsConfigurationError(
+        "SPREADSHEET_ID is not configured in the environment."
+    )
+
   creds = get_credentials()
   service = build("sheets", "v4", credentials=creds)
 
-  # Call the Sheets API
-  valueData = readText()
+  value_data = read_flight_data()
   sheet = service.spreadsheets()
   try:
     (
         sheet.values()
-        .append(spreadsheetId=SAMPLE_SPREADSHEET_ID, range=SAMPLE_RANGE_NAME, valueInputOption="USER_ENTERED", body={"values": valueData})
+        .append(
+            spreadsheetId=SPREADSHEET_ID,
+            range=SHEET_RANGE,
+            valueInputOption="USER_ENTERED",
+            body={"values": value_data},
+        )
         .execute()
     )
   except HttpError as err:
-    if err.resp.status == 401:
-      raise GoogleSheetsAuthenticationError(
-          "Google Sheets rejected the saved credentials."
+    if err.resp.status in (401, 403, 404):
+      service_account_email = getattr(creds, "service_account_email", "unknown")
+      raise GoogleSheetsConfigurationError(
+          "Google Sheets could not access the configured spreadsheet. Confirm "
+          "that SPREADSHEET_ID is correct, the Sheets API is enabled, and the "
+          f"spreadsheet is shared with {service_account_email} as an Editor."
       ) from err
     raise
 
