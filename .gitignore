@@ -1,14 +1,25 @@
+# Secrets and local credentials
 .env
-search_flights_response.json
-merged_flight_data.json
-__pycache__
-*.txt
+.env.*
+!.env.example
 credentials.json
-.venv/
 token.json
+*service-account*.json
+
+# Python environments and caches
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Generated runtime output and local datasets
 runtime-outputs/
 runtime/
-.pytest_cache/
-.vscode/
 data/
+search_flights_response.json
+merged_flight_data.json
+
+# Local database/editor/tool state
 flight-data.session.sql
+.vscode/
+.agents/

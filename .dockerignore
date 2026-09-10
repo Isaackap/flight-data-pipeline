@@ -1,47 +1,31 @@
-# Include any files or directories that you don't want to be copied to your
-# container here (e.g., local build artifacts, temporary files, etc.).
-#
-# For more help, visit the .dockerignore file reference guide at
-# https://docs.docker.com/go/build-context-dockerignore/
-
-**/.DS_Store
-**/__pycache__
-**/.venv
-**/.classpath
-**/.dockerignore
-**/.env
-**/.git
-**/.gitignore
-**/.project
-**/.settings
-**/.toolstarget
-**/.vs
-**/.vscode
-**/*.*proj.user
-**/*.dbmdl
-**/*.jfm
-**/bin
-**/charts
-**/docker-compose*
-**/compose.y*ml
-**/Dockerfile*
-**/node_modules
-**/npm-debug.log
-**/obj
-**/secrets.dev.yaml
-**/values.dev.yaml
-LICENSE
-README.md
-**/*.txt
-search_flights_response.json
-.venv
-.env
-token.json
-credentials.json
-runtime/
-runtime-outputs/
-.pytest_cache/
+# Version control and local tooling
+.git/
+.gitignore
+.dockerignore
+.agents/
 .vscode/
+
+# Secrets and credentials must be mounted or injected at runtime
+.env
+.env.*
+credentials.json
+token.json
+*service-account*.json
+
+# Python environments and caches
+.venv/
+**/__pycache__/
+**/*.py[cod]
+.pytest_cache/
+
+# Files not needed by the application image
+runtime-outputs/
+runtime/
 data/
-*.sql
 EDA/
+*.sql
+README*.md
+Dockerfile*
+compose*.yml
+compose*.yaml
+.DS_Store
