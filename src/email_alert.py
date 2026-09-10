@@ -30,3 +30,7 @@ def sendEmail():
         print("File was empty, didn't send email")
     # Clear file once email is sent
     open(PATHS["flight_alert"], "w").close()
+
+
+if __name__ == "__main__":
+    sendEmail()
