@@ -1,56 +1,56 @@
-# Comments are provided throughout this file to help you get started.
-# If you need more help, visit the Docker Compose reference guide at
-# https://docs.docker.com/go/compose-spec-reference/
+name: flightdata
 
-# Here the instructions define your application as a service called "server".
-# This service is built from the Dockerfile in the current directory.
-# You can add other services your application may depend on here, such as a
-# database or a cache. For examples, see the Awesome Compose repository:
-# https://github.com/docker/awesome-compose
 services:
+  db:
+    image: postgres:17-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: flight-data
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_password
+    secrets:
+      - db_password
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d flight-data"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
   app:
     build:
       context: .
-    #env_file:
-    #  - .env
+    depends_on:
+      db:
+        condition: service_healthy
+    # Share only the database container's network namespace. This preserves the
+    # existing localhost database connection without publishing PostgreSQL.
+    network_mode: "service:db"
+    restart: "no"
+    init: true
     volumes:
-      #- ./credentials.json:/app/credentials.json:ro
-      #- ./token.json:/app/token.json:ro
-      - ./runtime-outputs:/app/runtime
-      #- ~/.aws:/root/.aws:ro
-    ports:
-      - 8000:8000
+      - runtime-data:/app/runtime-outputs
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
 
-# The commented out section below is an example of how to define a PostgreSQL
-# database that your application can use. `depends_on` tells Docker Compose to
-# start the database before your application. The `db-data` volume persists the
-# database data between container restarts. The `db-password` secret is used
-# to set the database password. You must create `db/password.txt` and add
-# a password of your choosing to it before running `docker compose up`.
-#     depends_on:
-#       db:
-#         condition: service_healthy
-#   db:
-#     image: postgres
-#     restart: always
-#     user: postgres
-#     secrets:
-#       - db-password
-#     volumes:
-#       - db-data:/var/lib/postgresql/data
-#     environment:
-#       - POSTGRES_DB=example
-#       - POSTGRES_PASSWORD_FILE=/run/secrets/db-password
-#     expose:
-#       - 5432
-#     healthcheck:
-#       test: [ "CMD", "pg_isready" ]
-#       interval: 10s
-#       timeout: 5s
-#       retries: 5
-# volumes:
-#   db-data:
-# secrets:
-#   db-password:
-#     file: db/password.txt
+volumes:
+  postgres-data:
+  runtime-data:
+
+# Compose reads this value from the VM shell and mounts it as a file only in
+# the PostgreSQL container. The Python app retrieves the same value directly
+# from Google Secret Manager through the VM's attached service account.
+secrets:
+  db_password:
+    environment: DB_PASSWORD
 
